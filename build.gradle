@@ -19,6 +19,11 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    implementation 'org.glassfish:javax.json:1.1.4'
+    implementation 'jakarta.json:jakarta.json-api:2.0.1'
+}
+
 application {
     mainClass = 'hackathon.JavaRuntimeInvaders'
 }

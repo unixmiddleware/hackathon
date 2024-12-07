@@ -19,6 +19,13 @@ public class GamePanel extends JPanel implements ActionListener {
     private final int DELAY = 15;
     private Image backgroundImage;
 
+    private SoundEffect shootSound;
+    private SoundEffect hitSound;
+    private BackgroundMusic backgroundMusic;
+
+    private boolean inGame;
+    private JButton closeButton;
+
     public GamePanel() {
         initPanel();
     }
@@ -33,6 +40,12 @@ public class GamePanel extends JPanel implements ActionListener {
         player = new Player();
         invaders = createInvaders();
         bullets = new ArrayList<>();
+
+        shootSound = new SoundEffect("shoot.wav");
+        hitSound = new SoundEffect("hit.wav");
+        backgroundMusic = new BackgroundMusic("background_music.wav");
+
+        inGame = true;
 
         addKeyListener(new KeyAdapter() {
             @Override
@@ -51,6 +64,8 @@ public class GamePanel extends JPanel implements ActionListener {
 
         timer = new Timer(DELAY, this);
         timer.start();
+
+        backgroundMusic.play();
     }
 
     private void loadBackgroundImage() {
@@ -70,13 +85,18 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void fire() {
         bullets.add(new Bullet(player.getX() + player.getWidth() / 2, player.getY()));
+        shootSound.play();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        drawBackground(g);
-        drawObjects(g);
+        if (inGame) {
+            drawBackground(g);
+            drawObjects(g);
+        } else {
+            drawGameOver(g);
+        }
     }
 
     private void drawBackground(Graphics g) {
@@ -97,13 +117,40 @@ public class GamePanel extends JPanel implements ActionListener {
         Toolkit.getDefaultToolkit().sync();
     }
 
+    private void drawGameOver(Graphics g) {
+        String message = "Game Over";
+        Font font = new Font("Helvetica", Font.BOLD, 40);
+        FontMetrics metrics = getFontMetrics(font);
+
+        g.setColor(Color.WHITE);
+        g.setFont(font);
+        g.drawString(message, (800 - metrics.stringWidth(message)) / 2, 300);
+
+        if (closeButton == null) {
+            closeButton = new JButton("Close Game");
+            closeButton.setBounds(350, 350, 150, 50);
+            closeButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    backgroundMusic.stop();
+                    System.exit(0);
+                }
+            });
+            setLayout(null);
+            add(closeButton);
+        }
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        updateBullets();
-        updateInvaders();
-        player.move();
-        checkCollisions();
-        repaint();
+        if (inGame) {
+            updateBullets();
+            updateInvaders();
+            player.move();
+            checkCollisions();
+            checkGameOver();
+            repaint();
+        }
     }
 
     private void updateBullets() {
@@ -123,6 +170,9 @@ public class GamePanel extends JPanel implements ActionListener {
     private void updateInvaders() {
         for (Invader invader : invaders) {
             invader.move();
+            if (invader.getY() > 600) {
+                inGame = false;
+            }
         }
     }
 
@@ -144,9 +194,16 @@ public class GamePanel extends JPanel implements ActionListener {
                     invader.setVisible(false);
                     bulletIterator.remove();
                     invaderIterator.remove();
+                    hitSound.play();
                     showRuntimeIssue(invader.getIssue());
                 }
             }
+        }
+    }
+
+    private void checkGameOver() {
+        if (invaders.isEmpty()) {
+            inGame = false;
         }
     }
 
