@@ -2,16 +2,16 @@ package hackathon;
 
 import javax.swing.*;
 
-import java.awt.*;
-
 public class JavaRuntimeInvaders extends JFrame {
 
-    public JavaRuntimeInvaders() {
-        initUI();
+    public JavaRuntimeInvaders(String[] args) {
+        initUI(args);
     }
 
-    private void initUI() {
-        add(new GamePanel());
+    private void initUI(String[] args) {
+        GamePanel gamePanel = new GamePanel(args);
+        add(gamePanel);
+
         setTitle("Java Runtime Invaders");
         setSize(800, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -19,8 +19,8 @@ public class JavaRuntimeInvaders extends JFrame {
     }
 
     public static void main(String[] args) {
-        EventQueue.invokeLater(() -> {
-            JavaRuntimeInvaders ex = new JavaRuntimeInvaders();
+        SwingUtilities.invokeLater(() -> {
+            JavaRuntimeInvaders ex = new JavaRuntimeInvaders(args);
             ex.setVisible(true);
         });
     }

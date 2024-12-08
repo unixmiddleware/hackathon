@@ -6,9 +6,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class GamePanel extends JPanel implements ActionListener {
 
@@ -26,8 +31,53 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean inGame;
     private JButton closeButton;
 
-    public GamePanel() {
+    // Features to simulate issues
+    private boolean memoryLeakEnabled;
+    private boolean deadlockEnabled;
+    private boolean highCpuUsageEnabled;
+    private boolean resourceLeakEnabled;
+    private boolean infiniteRecursionEnabled;
+    private boolean excessiveLoggingEnabled;
+
+    // Memory leak - A list that will grow indefinitely
+    private List<byte[]> memoryLeak;
+    private List<Object> resourceLeak;
+    private Logger logger = Logger.getLogger(GamePanel.class.getName());
+
+    public GamePanel(String[] args) {
+        parseArgs(args);
         initPanel();
+    }
+
+    private void parseArgs(String[] args) {
+        for (String arg : args) {
+            switch (arg) {
+                case "memoryLeak":
+                    memoryLeakEnabled = true;
+                    memoryLeak = new LinkedList<>();
+                    break;
+                case "deadlock":
+                    deadlockEnabled = true;
+                    simulateDeadlock();
+                    break;
+                case "highCpuUsage":
+                    highCpuUsageEnabled = true;
+                    break;
+                case "resourceLeak":
+                    resourceLeakEnabled = true;
+                    resourceLeak = new ArrayList<>();
+                    break;
+                case "infiniteRecursion":
+                    infiniteRecursionEnabled = true;
+                    simulateInfiniteRecursion();
+                    break;
+                case "excessiveLogging":
+                    excessiveLoggingEnabled = true;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     private void initPanel() {
@@ -36,7 +86,7 @@ public class GamePanel extends JPanel implements ActionListener {
         setPreferredSize(new Dimension(800, 600));
 
         loadBackgroundImage();
-        
+
         player = new Player();
         invaders = createInvaders();
         bullets = new ArrayList<>();
@@ -88,12 +138,14 @@ public class GamePanel extends JPanel implements ActionListener {
         shootSound.play();
     }
 
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         if (inGame) {
             drawBackground(g);
             drawObjects(g);
+            simulateIssues();
         } else {
             drawGameOver(g);
         }
@@ -210,4 +262,103 @@ public class GamePanel extends JPanel implements ActionListener {
     private void showRuntimeIssue(String issue) {
         JOptionPane.showMessageDialog(this, "Runtime Issue: " + issue, "Issue Info", JOptionPane.INFORMATION_MESSAGE);
     }
+
+    // Simulate various issues based on command-line arguments
+    private void simulateIssues() {
+        if (memoryLeakEnabled) {
+            simulateMemoryLeak();
+        }
+        if (highCpuUsageEnabled) {
+            simulateHighCpuUsage();
+        }
+        if (resourceLeakEnabled) {
+            simulateResourceLeak();
+        }
+        if (excessiveLoggingEnabled) {
+            simulateExcessiveLogging();
+        }
+    }
+
+    // Simulate a memory leak by continuously adding larger elements to the list
+    private void simulateMemoryLeak() {
+        for (int i = 0; i < 10; i++) {
+            memoryLeak.add(new byte[10 * 1024 * 1024]); // Add 10MB byte arrays to the list
+        }
+    }
+
+    // Simulate deadlock by creating two threads that hold locks on each other
+    private void simulateDeadlock() {
+        final Object resource1 = new Object();
+        final Object resource2 = new Object();
+
+        Thread t1 = new Thread(() -> {
+            synchronized (resource1) {
+                System.out.println("Thread 1: Locked resource 1");
+
+                try { Thread.sleep(50); } catch (InterruptedException e) {}
+
+                synchronized (resource2) {
+                    System.out.println("Thread 1: Locked resource 2");
+                }
+            }
+        });
+
+        Thread t2 = new Thread(() -> {
+            synchronized (resource2) {
+                System.out.println("Thread 2: Locked resource 2");
+
+                try { Thread.sleep(50); } catch (InterruptedException e) {}
+
+                synchronized (resource1) {
+                    System.out.println("Thread 2: Locked resource 1");
+                }
+            }
+        });
+
+        t1.start();
+        t2.start();
+    }
+    // Simulate high CPU usage 
+    private void simulateHighCpuUsage() { 
+        Thread cpuThread = new Thread(() -> { 
+            while (true) { 
+                double value = Math.random() * Math.random(); 
+            } 
+        }); 
+        cpuThread.start(); 
+    }
+
+    private void simulateResourceLeak() {
+        Thread resourceLeakThread = new Thread(() -> {
+            try {
+                while (true) {
+                    FileInputStream fis = new FileInputStream(new File("somefile.txt"));
+                    resourceLeak.add(fis);  // Intentionally not closing the FileInputStream
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        resourceLeakThread.start();
+    }
+
+    // Simulate infinite recursion
+    private void simulateInfiniteRecursion() {
+        SwingUtilities.invokeLater(this::recursiveMethod);
+    }
+
+    private void recursiveMethod() {
+        recursiveMethod();
+    }
+
+    // Simulate excessive logging
+    private void simulateExcessiveLogging() {
+        Thread loggingThread = new Thread(() -> {
+            while (true) {
+                logger.info("Logging excessively...");
+            }
+        });
+        loggingThread.start();
+    }
 }
+

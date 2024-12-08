@@ -16,7 +16,7 @@ public class Player {
     private void initPlayer() {
         loadImage();
         x = 400;
-        y = 550;
+        y = 500;
     }
 
     private void loadImage() {
